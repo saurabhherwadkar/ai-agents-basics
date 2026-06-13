@@ -1,108 +1,85 @@
+"""CrewAI example: a coding crew with engineer, QA, and chief QA agents."""
+
 from textwrap import dedent
 
-import agentops
 from crewai import Agent, Crew, Process, Task
-from dotenv import load_dotenv
 
-load_dotenv()
-
-agentops.init()
+import config  # noqa: F401 — ensures .env is loaded
 
 print("## Welcome to the Game Crew")
 print("-------------------------------")
-game = input("What is the game you would like to build? What will be the mechanics?\n")
+game = input("What game would you like to build? Describe the mechanics:\n")
 
-
-senior_engineer_agent = Agent(
+senior_engineer = Agent(
     role="Senior Software Engineer",
     goal="Create software as needed",
-    backstory=dedent(
-        """
+    backstory=dedent("""\
         You are a Senior Software Engineer at a leading tech think tank.
-        Your expertise in programming in python. and do your best to
-        produce perfect code
-        """
-    ),
+        Your expertise is programming in Python, and you produce clean,
+        well-structured, production-quality code."""),
     allow_delegation=False,
     verbose=True,
 )
 
-qa_engineer_agent = Agent(
+qa_engineer = Agent(
     role="Software Quality Control Engineer",
-    goal="create prefect code, by analizing the code that is given for errors",
-    backstory=dedent(
-        """
-        You are a software engineer that specializes in checking code
-        for errors. You have an eye for detail and a knack for finding
-        hidden bugs.
+    goal="Analyze code for errors and produce a list of issues",
+    backstory=dedent("""\
+        You are a software engineer specializing in code review.
+        You have an eye for detail and a knack for finding hidden bugs.
         You check for missing imports, variable declarations, mismatched
-        brackets and syntax errors.
-        You also check for security vulnerabilities, and logic errors
-        """
-    ),
+        brackets, syntax errors, security vulnerabilities, and logic errors."""),
     allow_delegation=False,
     verbose=True,
 )
 
-chief_qa_engineer_agent = Agent(
+chief_qa_engineer = Agent(
     role="Chief Software Quality Control Engineer",
-    goal="Ensure that the code does the job that it is supposed to do",
-    backstory=dedent(
-        """
-        You are a Chief Software Quality Control Engineer at a leading
-        tech think tank. You are responsible for ensuring that the code
-        that is written does the job that it is supposed to do.
-        You are responsible for checking the code for errors and ensuring
-        that it is of the highest quality.
-        """
-    ),
+    goal="Ensure the code does the job it is supposed to do",
+    backstory=dedent("""\
+        You are a Chief Software Quality Control Engineer responsible for
+        ensuring that code meets the highest quality standards. You verify
+        correctness, completeness, and adherence to requirements."""),
     allow_delegation=True,
     verbose=True,
 )
 
 code_task = Task(
-    description=f"""You will create a game using python, these are the instructions:
-        Instructions
-        ------------
-        {game}        
-        You will write the code for the game using python.""",
-    expected_output="Your Final answer must be the full python code, only the python code and nothing else.",
-    agent=senior_engineer_agent,
+    description=dedent(f"""\
+        Create a game using Python based on these instructions:
+        {game}
+        Write the complete code for the game."""),
+    expected_output="The full Python code for the game, and nothing else.",
+    agent=senior_engineer,
 )
 
 qa_task = Task(
-    description=f"""You are helping create a game using python, these are the instructions:
-        Instructions
-        ------------
+    description=dedent(f"""\
+        Review the game code for the following game:
         {game}
-        Using the code you got, check for errors. Check for logic errors,
-        syntax errors, missing imports, variable declarations, mismatched brackets,
-        and security vulnerabilities.""",
-    expected_output="Output a list of issues you found in the code.",
-    agent=qa_engineer_agent,
+        Check for logic errors, syntax errors, missing imports, variable
+        declarations, mismatched brackets, and security vulnerabilities."""),
+    expected_output="A list of issues found in the code.",
+    agent=qa_engineer,
 )
 
 evaluate_task = Task(
-    description=f"""You are helping create a game using python, these are the instructions:
-        Instructions
-        ------------
+    description=dedent(f"""\
+        Evaluate the game code for the following game:
         {game}
-        You will look over the code to insure that it is complete and
-        does the job that it is supposed to do. """,
-    expected_output="Your Final answer must be the corrected a full python code, only the python code and nothing else.",
-    agent=chief_qa_engineer_agent,
+        Ensure the code is complete and does the job it is supposed to do.
+        Apply any necessary fixes."""),
+    expected_output="The corrected full Python code, and nothing else.",
+    agent=chief_qa_engineer,
 )
 
-# Instantiate your crew with a sequential process
 crew = Crew(
-    agents=[senior_engineer_agent, qa_engineer_agent, chief_qa_engineer_agent],
+    agents=[senior_engineer, qa_engineer, chief_qa_engineer],
     tasks=[code_task, qa_task, evaluate_task],
-    verbose=2,  # You can set it to 1 or 2 to different logging levels
     process=Process.sequential,
+    verbose=True,
 )
 
-# Get your crew to work!
 result = crew.kickoff()
-
-print("######################")
+print("\n######################")
 print(result)

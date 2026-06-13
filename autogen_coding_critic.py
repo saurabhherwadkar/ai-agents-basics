@@ -1,64 +1,55 @@
+"""AG2 example: engineer + code reviewer using nested chats for automatic review."""
+
 from autogen import AssistantAgent, UserProxyAgent, config_list_from_json
 
-# Load the configuration list from the config file.
-config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST")
+from config import AG2_CONFIG_FILE, AG2_USE_DOCKER, AG2_WORK_DIR
 
-# Create the agent that represents the user in the conversation.
+config_list = config_list_from_json(env_or_file=AG2_CONFIG_FILE)
+llm_config = {"config_list": config_list}
+
 user_proxy = UserProxyAgent(
-    "user",
-    code_execution_config={
-        "work_dir": "working",
-        "use_docker": False,
-        "last_n_messages": 1,
-    },
+    name="User",
+    code_execution_config={"work_dir": AG2_WORK_DIR, "use_docker": AG2_USE_DOCKER},
     human_input_mode="ALWAYS",
-    is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
+    is_termination_msg=lambda msg: msg.get("content", "").rstrip().endswith("TERMINATE"),
 )
 
 engineer = AssistantAgent(
     name="Engineer",
-    llm_config={"config_list": config_list},
-    system_message="""
-    You are a profession Python engineer, known for your expertise in software development.
-    You use your skills to create software applications, tools, and games that are both functional and efficient.
-    Your preference is to write clean, well-structured code that is easy to read and maintain.    
-    """,
+    llm_config=llm_config,
+    system_message=(
+        "You are a professional Python engineer. You write clean, "
+        "well-structured code that is easy to read and maintain."
+    ),
 )
 
-critic = AssistantAgent(
+reviewer = AssistantAgent(
     name="Reviewer",
-    llm_config={"config_list": config_list},
-    system_message="""
-    You are a code reviewer, known for your thoroughness and commitment to standards.
-    Your task is to scrutinize code content for any harmful or substandard elements.
-    You ensure that the code is secure, efficient, and adheres to best practices.
-    You will identify any issues or areas for improvement in the code and output them as a list.
-    """,
+    llm_config=llm_config,
+    system_message=(
+        "You are a code reviewer known for thoroughness and commitment to standards. "
+        "You scrutinize code for bugs, security issues, and adherence to best practices. "
+        "Output a list of issues or improvements."
+    ),
 )
 
 
 def review_code(recipient, messages, sender, config):
-    return f"""
-            Review and critque the following code.
-            
-            {recipient.chat_messages_for_summary(sender)[-1]['content']}
-            """
+    last_content = recipient.chat_messages_for_summary(sender)[-1]["content"]
+    return f"Review and critique the following code:\n\n{last_content}"
 
 
 user_proxy.register_nested_chats(
     [
         {
-            "recipient": critic,
+            "recipient": reviewer,
             "message": review_code,
             "summary_method": "last_msg",
             "max_turns": 3,
         }
     ],
-    trigger=engineer,  # condition=my_condition,
+    trigger=engineer,
 )
 
-task = """Write a snake game using Pygame."""
-
-res = user_proxy.initiate_chat(
-    recipient=engineer, message=task, max_turns=2, summary_method="last_msg"
-)
+task = "Write a snake game using Pygame."
+user_proxy.initiate_chat(recipient=engineer, message=task, max_turns=2, summary_method="last_msg")

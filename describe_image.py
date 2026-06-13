@@ -1,48 +1,37 @@
+"""Describe an image using the OpenAI Vision API."""
+
+from openai import OpenAI
+
+from config import DEFAULT_IMAGE_PATH, MODEL_NAME, OPENAI_API_KEY, VISION_MAX_TOKENS
+
 import base64
-import os
-import requests
 
 
-def describe_image(image_path="animals.png") -> str:
-    """
-    Uses GPT-4 Vision to inspect and describe the contents of the image.
+def describe_image(image_path: str = DEFAULT_IMAGE_PATH) -> str:
+    client = OpenAI(api_key=OPENAI_API_KEY)
 
-    :param input_path: str, the name of the PNG file to describe.
-    """
-    api_key = os.environ['OPEN_API_KEY']
+    with open(image_path, "rb") as f:
+        base64_image = base64.b64encode(f.read()).decode("utf-8")
 
-    # Function to encode the image
-    def encode_image(image_path):
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode("utf-8")
-
-    # Getting the base64 string
-    base64_image = encode_image(image_path)
-
-    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-
-    payload = {
-        "model": "gpt-4-turbo",
-        "messages": [
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "What’s in this image?"},
+                    {"type": "text", "text": "What's in this image?"},
                     {
                         "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                        "image_url": {"url": f"data:image/png;base64,{base64_image}"},
                     },
                 ],
             }
         ],
-        "max_tokens": 300,
-    }
-
-    response = requests.post(
-        "https://api.openai.com/v1/chat/completions", headers=headers, json=payload
+        max_tokens=VISION_MAX_TOKENS,
     )
 
-    return response.json()["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
 
 
-# print(describe_image())
+if __name__ == "__main__":
+    print(describe_image())

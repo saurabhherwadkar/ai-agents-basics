@@ -1,0 +1,18 @@
+[project]
+name = "ai-agents-basics"
+version = "0.1.0"
+description = "Introductory examples for AI agent frameworks (AG2 and CrewAI)"
+requires-python = ">=3.11"
+dependencies = [
+    "ag2[openai]>=0.6",
+    "crewai>=0.80",
+    "crewai-tools>=0.14",
+    "agentops>=0.3",
+    "openai>=1.50",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.7",
+]

@@ -1,2 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables and secrets
+.env
+.env.*
 OAI_CONFIG_LIST
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project specific
+working/
+output/
 *.bin
+*.cache
+the_best_joke.md
+
+# Pipenv (replaced by uv/pyproject.toml)
+Pipfile
+Pipfile.lock
+
+# uv
+.python-version
