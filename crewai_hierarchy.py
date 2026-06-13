@@ -1,15 +1,22 @@
 """CrewAI example: hierarchical process with a manager coordinating agents."""
 
+# Import dedent for clean multi-line string formatting
 from textwrap import dedent
 
+# Import core CrewAI classes for building agent workflows
 from crewai import Agent, Crew, Process, Task
 
+# Import the manager model setting from project config
 from config import MANAGER_MODEL
 
+# Print a welcome banner for the hierarchical game crew
 print("## Welcome to the Game Crew (Hierarchical)")
 print("--------------------------------------------")
+
+# Prompt the user to describe the game they want built
 game = input("What game would you like to build? Describe the mechanics:\n")
 
+# Create a senior engineer agent responsible for writing the game code
 senior_engineer = Agent(
     role="Senior Software Engineer",
     goal="Create software as needed",
@@ -21,6 +28,7 @@ senior_engineer = Agent(
     verbose=True,
 )
 
+# Create a QA engineer agent that reviews code for errors and vulnerabilities
 qa_engineer = Agent(
     role="Software Quality Control Engineer",
     goal="Analyze code for errors and produce a list of issues",
@@ -33,6 +41,7 @@ qa_engineer = Agent(
     verbose=True,
 )
 
+# Create a chief QA agent that validates the final code meets requirements
 chief_qa_engineer = Agent(
     role="Chief Software Quality Control Engineer",
     goal="Ensure the code does the job it is supposed to do",
@@ -44,6 +53,7 @@ chief_qa_engineer = Agent(
     verbose=True,
 )
 
+# Define the coding task for the senior engineer to implement the game
 code_task = Task(
     description=dedent(f"""\
         Create a game using Python based on these instructions:
@@ -53,6 +63,7 @@ code_task = Task(
     agent=senior_engineer,
 )
 
+# Define the QA task to review the generated code for issues
 qa_task = Task(
     description=dedent(f"""\
         Review the game code for the following game:
@@ -63,6 +74,7 @@ qa_task = Task(
     agent=qa_engineer,
 )
 
+# Define the evaluation task for the chief QA to fix and finalize the code
 evaluate_task = Task(
     description=dedent(f"""\
         Evaluate the game code for the following game:
@@ -73,6 +85,7 @@ evaluate_task = Task(
     agent=chief_qa_engineer,
 )
 
+# Assemble the crew using hierarchical process with a manager LLM coordinating
 crew = Crew(
     agents=[senior_engineer, qa_engineer, chief_qa_engineer],
     tasks=[code_task, qa_task, evaluate_task],
@@ -81,6 +94,7 @@ crew = Crew(
     verbose=True,
 )
 
+# Kick off the crew and print the final corrected code
 result = crew.kickoff()
 print("\n######################")
 print(result)
